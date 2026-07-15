@@ -1,12 +1,33 @@
+<div align="center">
+
 # ⚡ Transformer Life Gauge
 
-**Real-Time Insulation Life Estimation for Power Transformers using IoT + the IEEE C57.91 Thermal Aging Model**
+### *Turning a Transformer's Thermal Behavior Into a Live "Battery Percentage" for Its Remaining Insulation Life*
 
-> Turning a transformer's thermal behavior into a simple, live "battery percentage" for its remaining insulation life.
+A concept + prototype-stage IoT project that estimates a power transformer's **real-time remaining insulation life** using the industry-standard **IEEE C57.91 thermal aging model** — combining live sensor data (load current, oil temperature, ambient temperature) with an ESP32 + MQTT + cloud dashboard pipeline.
 
-**🚧 Current Status:** Concept & design stage — architecture, thermal-aging model, and bench-prototype plan finalized. Physical build not yet started.
+Built as a bridge between **electrical transformer design fundamentals** and **practical, low-cost IoT engineering**.
+
+<br>
+
+![Status](https://img.shields.io/badge/Status-Concept%20%2F%20Design%20Stage-orange)
+![Model](https://img.shields.io/badge/Model-IEEE%20C57.91-1c3d5a)
+![Hardware](https://img.shields.io/badge/Hardware-ESP32-e74c3c)
+![Protocol](https://img.shields.io/badge/Protocol-MQTT-660066)
+![Dashboard](https://img.shields.io/badge/Dashboard-ThingsBoard-2e86de)
+![Domain](https://img.shields.io/badge/Domain-Power%20Transformers-2c3e50)
+![Type](https://img.shields.io/badge/Type-IoT%20%2B%20Electrical%20Engineering-16a085)
+![License](https://img.shields.io/badge/License-MIT-brightgreen)
+
+<br>
 
 ---
+
+### ⭐ If you find this concept useful, consider giving the repo a star!
+
+---
+
+</div>
 
 ## 📌 Table of Contents
 
@@ -32,6 +53,7 @@
 - [License](#-license)
 
 ---
+
 
 ## 🔎 Overview
 
@@ -177,7 +199,7 @@ ESP32                DS18B20 (Temp)
   3.3V ─────────────── VCC
   GND  ─────────────── GND
   GPIO4 ─── 4.7kΩ ───┬─ DATA
-                     └─(pull-up to 3.3V)
+                      └─(pull-up to 3.3V)
 
 ESP32                ACS712 (Current)
   5V   ─────────────── VCC

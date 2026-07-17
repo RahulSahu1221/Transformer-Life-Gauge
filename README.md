@@ -33,7 +33,9 @@ Built as a bridge between **electrical transformer design fundamentals** and **p
 
 - [Overview](#-overview)
 - [The Problem](#-the-problem)
+- [Transformer Types: Where This Project Fits](#-transformer-types-where-this-project-fits)
 - [Why This Works — The Physics](#-why-this-works--the-physics)
+- [Temperature & Loading Reference Data](#-temperature--loading-reference-data)
 - [The Math Model](#-the-math-model)
 - [System Architecture](#-system-architecture)
 - [Parameters Monitored](#-parameters-monitored)
@@ -78,6 +80,24 @@ This is **not a new algorithm** — the underlying thermal aging math is a well-
 
 ---
 
+## 🏭 Transformer Types: Where This Project Fits
+
+Not all transformers are the same — the term covers a wide range of equipment, and it matters which category this project targets.
+
+| Aspect | Distribution Transformer | Power Transformer |
+|---|---|---|
+| **Where it sits in the grid** | Last stage — steps voltage down for direct use by homes/shops/small industry | Earlier stages — between generation, transmission, and sub-transmission |
+| **Voltage range** | ~11kV–33kV down to 400V/230V | ~33kV and up to 400kV+ |
+| **Rating** | A few kVA up to ~2,500 kVA | Several MVA up to 500+ MVA |
+| **Loading pattern** | Highly variable, peaky (residential demand swings) | Runs closer to steady, planned load |
+| **Efficiency design point** | Best efficiency at partial load (~50%) | Best efficiency near full/rated load |
+| **Population size** | Huge — thousands per utility | Relatively few — each one a major asset |
+| **Typical monitoring today** | Almost never individually monitored | Increasingly monitored on the largest/most critical units |
+
+**This project specifically targets mid-size power transformers** (roughly 5–100 MVA, 33kV–132kV+) — large enough that a failure is genuinely costly and slow to recover from, but not yet large or critical enough to justify today's expensive fiber-optic monitoring systems (which are typically reserved for 100+ MVA, 132kV+ transformers). This range also overlaps directly with the smaller end of typical power transformer product lines (e.g., 66kV distribution-class power transformers), making it a realistic, relevant proposal rather than a residential-scale idea.
+
+---
+
 ## 🔬 Why This Works — The Physics
 
 Two temperatures matter, and they are different:
@@ -91,6 +111,51 @@ Two temperatures matter, and they are different:
 > For every ~6–8°C the winding hot-spot temperature rises above its rated value, the insulation ages roughly **twice as fast**.
 
 This is why continuously tracking (or estimating) hot-spot temperature — instead of checking it once a year — gives a much more accurate picture of real insulation aging.
+
+---
+
+## 🌡 Temperature & Loading Reference Data
+
+### What "ambient temperature" means
+Ambient temperature is simply the temperature of the **air surrounding the transformer** — not the oil, not the winding. It's the starting point that heat gets added onto, in a rising chain:
+
+```
+Ambient Air  →  Top-Oil Temperature  →  Average Winding Temperature  →  Winding Hot-Spot
+   (lowest)                                                                  (highest)
+```
+
+The design standard uses **30°C** as the reference ambient temperature for calculations — a standardized assumption, not a real-time value. Real ambient temperature varies with weather, season, and location, which is exactly why an ambient sensor is part of the sensing pipeline.
+
+### Reference temperature zones
+
+| Zone | Hot-Spot Temperature | Meaning |
+|---|---|---|
+| **Rated / "handles well"** | 110°C (continuous) | Design reference for thermally-upgraded paper — built to run here indefinitely at normal aging speed |
+| **Emergency / short-term allowed** | Up to ~140–180°C | Permitted briefly (hours) under emergency loading — burns through insulation life much faster |
+| **Absolute danger ceiling** | 200°C hot-spot / 120°C top-oil | IEEE C57.91-2011 hard limits — beyond this, risk of gas-bubble formation and immediate dielectric breakdown, not just faster aging |
+
+### Typical winding temperature under normal working conditions (at 100% rated load)
+
+```
+Ambient temperature                         30°C
++ Average winding temperature rise         +65°C   (a "65°C rise" class transformer)
+= Average winding temperature               95°C
++ Hot-spot allowance above average         +15°C   (uneven heat distribution in the coil)
+= Reference hot-spot temperature           110°C
+```
+
+In practice, most transformers run well below 100% load most of the time (see below), so real winding temperatures are commonly in the **60–90°C range** rather than the 110°C reference value.
+
+### Typical real-world loading
+
+| Context | Typical Loading | Notes |
+|---|---|---|
+| Distribution transformers (peak) | ~50–60% of nameplate rating | ~50% annual load factor is common |
+| Residential load factor | ~15–35% | Highly peaky demand (evenings, AC season) |
+| General power distribution networks | ~40–70%, most of the time | Networks spend ~99% of time in this band |
+| Practical continuous-loading ceiling | ~80% | Above this is typically reserved for short-term/emergency loading |
+
+**Why this matters for this project:** because real transformers usually run well below their rated capacity, they usually age slower than the "20-year" textbook figure — but occasional peak-load events (heatwaves, contingencies, EV charging spikes) can push a transformer into accelerated aging for hours or days at a time, completely invisible to a fixed-schedule inspection regime. This is precisely the pattern the Life Gauge is designed to catch.
 
 ---
 
@@ -139,12 +204,12 @@ Run this calculation every sampling interval (e.g., every 1–5 minutes) and acc
 ## 🏗 System Architecture
 
 ```
-┌─────────────────────────┐   ┌───────────────┐     ┌────────┐     ┌────────────────────┐
-│ Temp Sensor (DS18B20)   │   │               │     │        │     │                    │
-│ Current Sensor (ACS712) ├──►│  ESP32 (MCU)  ├────►│  MQTT  ├────►│  ThingsBoard Cloud │
-│ Ambient Sensor (DHT22)  │   │ Runs the F_AA │     │ Broker │     │  Live Dashboard    │
-└─────────────────────────┘   │ formula       │     └────────┘     │  + Alerts          │
-                              └───────────────┘                    └────────────────────┘
+┌─────────────────────┐     ┌───────────────┐     ┌────────┐     ┌───────────────────┐
+│ Temp Sensor (DS18B20)│    │               │     │        │     │                   │
+│ Current Sensor (ACS712)├──►│  ESP32 (MCU)  ├────►│  MQTT  ├────►│  ThingsBoard Cloud │
+│ Ambient Sensor (DHT22)│    │ Runs the F_AA │     │ Broker │     │  Live Dashboard    │
+└─────────────────────┘     │ formula       │     └────────┘     │  + Alerts          │
+                             └───────────────┘                    └───────────────────┘
 ```
 
 - **Sensors** → collect real-time load current and temperature data.

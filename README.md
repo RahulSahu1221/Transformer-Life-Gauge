@@ -204,12 +204,12 @@ Run this calculation every sampling interval (e.g., every 1–5 minutes) and acc
 ## 🏗 System Architecture
 
 ```
-┌─────────────────────┐     ┌───────────────┐     ┌────────┐     ┌───────────────────┐
-│ Temp Sensor (DS18B20)│    │               │     │        │     │                   │
+┌────────────────────────┐   ┌───────────────┐     ┌────────┐     ┌────────────────────┐
+│ Temp Sensor (DS18B20)  │   │               │     │        │     │                    │
 │ Current Sensor (ACS712)├──►│  ESP32 (MCU)  ├────►│  MQTT  ├────►│  ThingsBoard Cloud │
-│ Ambient Sensor (DHT22)│    │ Runs the F_AA │     │ Broker │     │  Live Dashboard    │
-└─────────────────────┘     │ formula       │     └────────┘     │  + Alerts          │
-                             └───────────────┘                    └───────────────────┘
+│ Ambient Sensor (DHT22) │   │ Runs the F_AA │     │ Broker │     │  Live Dashboard    │
+└────────────────────────┘   │ formula       │     └────────┘     │  + Alerts          │
+                             └───────────────┘                    └────────────────────┘
 ```
 
 - **Sensors** → collect real-time load current and temperature data.

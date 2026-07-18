@@ -4,7 +4,7 @@
 
 ### *Turning a Transformer's Thermal Behavior Into a Live "Battery Percentage" for Its Remaining Insulation Life*
 
-A concept + prototype-stage IoT project that estimates a power transformer's **real-time remaining insulation life** using the industry-standard **IEEE C57.91 thermal aging model** — combining live sensor data (load current, oil temperature, ambient temperature) with an ESP32 + MQTT + cloud dashboard pipeline.
+A concept + prototype-stage IoT project that estimates a power transformer's **real-time remaining insulation life** using the industry-standard **IEEE C57.91 thermal aging model** — combining live sensor data (load current, oil/winding temperature, ambient temperature) with an ESP32/STM32 + MQTT + cloud dashboard pipeline.
 
 Built as a bridge between **electrical transformer design fundamentals** and **practical, low-cost IoT engineering**.
 
@@ -12,11 +12,12 @@ Built as a bridge between **electrical transformer design fundamentals** and **p
 
 ![Status](https://img.shields.io/badge/Status-Concept%20%2F%20Design%20Stage-orange)
 ![Model](https://img.shields.io/badge/Model-IEEE%20C57.91-1c3d5a)
-![Hardware](https://img.shields.io/badge/Hardware-ESP32-e74c3c)
+![Hardware](https://img.shields.io/badge/Hardware-ESP32%20%2F%20STM32-e74c3c)
 ![Protocol](https://img.shields.io/badge/Protocol-MQTT-660066)
 ![Dashboard](https://img.shields.io/badge/Dashboard-ThingsBoard-2e86de)
 ![Domain](https://img.shields.io/badge/Domain-Power%20Transformers-2c3e50)
 ![Type](https://img.shields.io/badge/Type-IoT%20%2B%20Electrical%20Engineering-16a085)
+![Validated](https://img.shields.io/badge/Model-MATLAB%20Validated-9b59b6)
 ![License](https://img.shields.io/badge/License-MIT-brightgreen)
 
 <br>
@@ -33,6 +34,7 @@ Built as a bridge between **electrical transformer design fundamentals** and **p
 
 - [Overview](#-overview)
 - [The Problem](#-the-problem)
+- [Industry Failure Data](#-industry-failure-data)
 - [Transformer Types: Where This Project Fits](#-transformer-types-where-this-project-fits)
 - [Why This Works — The Physics](#-why-this-works--the-physics)
 - [Temperature & Loading Reference Data](#-temperature--loading-reference-data)
@@ -45,7 +47,7 @@ Built as a bridge between **electrical transformer design fundamentals** and **p
 - [Firmware Logic (Pseudocode)](#-firmware-logic-pseudocode)
 - [Dashboard (ThingsBoard)](#-dashboard-thingsboard)
 - [Alarm Conditions](#-alarm-conditions)
-- [Bonus Feature: Dynamic Loading Advisor](#-bonus-feature-dynamic-loading-advisor)
+- [Dynamic Loading Advisor (Step 4)](#-dynamic-loading-advisor-step-4)
 - [Applications](#-applications)
 - [What Already Exists (Prior Art)](#-what-already-exists-prior-art)
 - [Roadmap](#-roadmap)
@@ -80,7 +82,26 @@ This is **not a new algorithm** — the underlying thermal aging math is a well-
 
 ---
 
+## 📊 Industry Failure Data
+
+Real data justifying why this problem is worth solving — not assumptions:
+
+| Root Cause (CIGRE Transformer Reliability Survey) | Share of Known Failure Causes |
+|---|---|
+| Design & Manufacturing Defects | 20% |
+| Insulation Ageing & Deterioration | 15% |
+| Improper Maintenance & Repair | 10% |
+
+**25% of known failure causes** come from insulation ageing + improper maintenance combined — exactly the segment real-time monitoring targets, since both stem from not knowing a transformer's true real-time condition.
+
+**Overall large power transformer failure rate: ~0.3–0.4% per year** (CIGRE, modern units) — rare, but each failure is high-cost and slow to recover from, which is why prevention matters more than frequency here.
+
+> *"A significant portion of faults that lead to transformer failures are foreseeable and predictable."* — Vaisala, analyzing CIGRE data
+
+---
+
 ## 🏭 Transformer Types: Where This Project Fits
+
 
 Not all transformers are the same — the term covers a wide range of equipment, and it matters which category this project targets.
 
@@ -199,21 +220,38 @@ Life Remaining (%) = 100 − Loss of Life (%)
 
 Run this calculation every sampling interval (e.g., every 1–5 minutes) and accumulate the result — this is the number shown on the live gauge.
 
+### Step 4 — Dynamic Loading Advisor (safe overload guidance)
+
+Once Steps 1–3 run continuously, the same model can be run *forward* against a proposed load increase to answer: **"How much extra load can I safely add, and for how long?"**
+
+```
+For a proposed load K_proposed sustained over duration Δt_proposed:
+  θ_H,proposed = (Step 1 with K_proposed)
+  F_AA,proposed = (Step 2 with θ_H,proposed)
+  Extra Life Cost (%) = (F_AA,proposed × Δt_proposed) / Rated Total Insulation Life × 100
+```
+
+Example output shown on the dashboard: *"Safe to add +10% load for the next 3 hours"* — with the projected life cost calculated and displayed **before** the operator commits to the overload. See [Dynamic Loading Advisor (Step 4)](#-dynamic-loading-advisor-step-4) for the utility context behind this.
+
+> ✅ **Offline validation completed:** this full 4-step model has already been implemented and validated in MATLAB using a simulated 24-hour daily load profile (load %, hot-spot temperature, aging acceleration factor `F_AA`, and live "Life Remaining %" trend) — confirming the math behaves correctly before any deployment on IoT hardware. See [`transformer_life_gauge_sim.m`](./transformer_life_gauge_sim.m).
+
 ---
 
 ## 🏗 System Architecture
 
 ```
-┌────────────────────────┐   ┌───────────────┐     ┌────────┐     ┌────────────────────┐
-│ Temp Sensor (DS18B20)  │   │               │     │        │     │                    │
-│ Current Sensor (ACS712)├──►│  ESP32 (MCU)  ├────►│  MQTT  ├────►│  ThingsBoard Cloud │
-│ Ambient Sensor (DHT22) │   │ Runs the F_AA │     │ Broker │     │  Live Dashboard    │
-└────────────────────────┘   │ formula       │     └────────┘     │  + Alerts          │
-                             └───────────────┘                    └────────────────────┘
+┌────────────────────────┐   ┌────────────────┐     ┌────────┐     ┌────────────────────┐
+│ Temp Sensor (DS18B20)  │   │                │     │        │     │                    │
+│ Current Sensor (ACS712)├──►│ ESP32 / STM32  ├────►│  MQTT  ├────►│  ThingsBoard Cloud │
+│ Ambient Sensor (DHT22) │   │ (Processing    │     │ Broker │     │  Live Dashboard    │
+└────────────────────────┘   │  Unit) Runs    │     └────────┘     │  + Alerts          │
+                             │  the F_AA      │                    └────────────────────┘
+                             │  formula       │
+                             └────────────────┘
 ```
 
 - **Sensors** → collect real-time load current and temperature data.
-- **ESP32** → runs the hot-spot estimation + aging formula, publishes results via MQTT.
+- **Processing Unit (ESP32 or STM32)** → runs the hot-spot estimation + aging formula, publishes results via MQTT. ESP32 is used in the prototype for built-in WiFi; STM32 is a viable alternative for projects needing more processing headroom or a separate WiFi/communication module.
 - **MQTT Broker** → lightweight pub/sub messaging (same protocol used in typical Smart Factory IoT setups).
 - **ThingsBoard** → cloud dashboard displaying the live "Life Remaining %" gauge, historical trend charts, and threshold-based alerts.
 
@@ -225,12 +263,16 @@ Run this calculation every sampling interval (e.g., every 1–5 minutes) and acc
 |---|---|---|
 | Load current | ACS712 | Determines `K` (load ÷ rated load) — main driver of hot-spot temperature |
 | Oil temperature | DS18B20 | Simulated top-oil temperature (`θ_TO`) |
+| Winding temperature | DS18B20 (2nd unit) or estimated | Shown separately on the dashboard alongside oil temperature for operator context |
 | Ambient temperature | DHT22 | Baseline temperature (`θ_A`) in the hot-spot formula |
 | Calculated hot-spot temperature | Derived (not directly sensed) | Drives the aging acceleration factor `F_AA` |
 | Calculated aging rate (`F_AA`) | Derived | Determines how fast insulation life is being consumed right now |
 | Cumulative life consumed | Derived | Feeds the live "Life Remaining %" gauge |
+| Oil quality | *Dashboard placeholder (see note below)* | Complementary health indicator alongside thermal aging |
 
 > On a real transformer, oil temperature and load current would come from industrial-grade RTD probes and CT clamps instead of the prototype sensors above — the model and calculations stay identical.
+
+> ⚠️ **Honest note on Oil Quality:** the dashboard mockup displays an "Oil Quality: Good" field for a complete operator view, but real oil quality assessment (dielectric strength, moisture content, Dissolved Gas Analysis) requires lab testing or specialized industrial sensors — it is **not** computed by the current bench prototype. It's shown as a placeholder/future integration point, not a working measurement yet (see [Roadmap](#-roadmap)).
 
 ---
 
@@ -240,18 +282,20 @@ For a **bench-top demo** (simulating transformer heat with a small load, not an 
 
 | Component | Purpose | Approx. Price (₹) |
 |---|---|---|
-| ESP32 Dev Board | Microcontroller — runs formula, sends data over WiFi | 250–350 |
-| DS18B20 waterproof temp sensor | Simulated "oil temperature" | 80–150 |
+| ESP32 Dev Board *(or STM32 board, see note)* | Microcontroller — runs formula, sends data over WiFi | 250–350 |
+| DS18B20 waterproof temp sensor ×2 | Simulated "oil temperature" + "winding temperature" | 160–300 |
 | ACS712 (20A) current sensor module | Simulated "load current" | 100–150 |
 | DHT22 (optional) | Ambient temperature/humidity | 150–200 |
 | Small heating element / bulb + dimmer | Stand-in for transformer heat source | 150–300 |
 | Breadboard + jumper wires | Prototyping | 150–200 |
-| USB cable + power supply | Powering ESP32 | 100–150 |
+| USB cable + power supply | Powering the board | 100–150 |
 | Enclosure box (optional) | Housing / demo polish | 150–300 |
 | Misc (resistors, wires, solder) | — | 100–150 |
-| **Total** | | **≈ ₹1,200 – ₹2,000** |
+| **Total** | | **≈ ₹1,300 – ₹2,200** |
 
-**Software/cloud cost:** ₹0 (ThingsBoard Community Edition, public/self-hosted MQTT broker, Arduino IDE — all free).
+**Software/cloud cost:** ₹0 (ThingsBoard Community Edition, public/self-hosted MQTT broker, Arduino IDE/STM32CubeIDE — all free).
+
+> 🔧 **ESP32 vs STM32:** ESP32 is the simpler prototype choice — built-in WiFi means no extra communication module. STM32 offers more processing headroom and peripheral options but needs a separate WiFi/Ethernet module (e.g., ESP8266 as a co-processor, or an Ethernet shield) to reach the MQTT broker. For a fast bench demo, ESP32 is recommended; STM32 is a reasonable alternative if you already have one on hand or want more control-oriented peripherals.
 
 > 🔧 **Scaling to a real transformer:** swap DS18B20/ACS712 for industrial-grade oil-immersion RTD probes and a proper CT clamp, and replace placeholder `R`, `Δθ_TO`, `Δθ_HS` values with that transformer's actual temperature-rise test data.
 
@@ -285,11 +329,12 @@ ESP32                DHT22 (Ambient, optional)
 
 | Layer | Tool | Notes |
 |---|---|---|
-| Firmware | Arduino IDE / PlatformIO (C++) | Runs on ESP32 |
+| Firmware | Arduino IDE / PlatformIO (C++) — or STM32CubeIDE (C) if using STM32 | Runs on ESP32 (recommended) or STM32 |
 | Messaging | MQTT (e.g., `PubSubClient` library) | Publishes sensor + calculated data |
 | Cloud Dashboard | [ThingsBoard](https://thingsboard.io/) Community Edition | Free, self-hostable or use ThingsBoard Cloud sandbox |
 | Data Storage | ThingsBoard time-series DB | Built-in, no separate DB setup needed for prototype |
 | Optional Alerts | ThingsBoard Rule Chains | Trigger notification if life-consumption rate spikes |
+| Offline Model Validation | MATLAB R2024a | Validates the 4-step math model against a simulated daily load profile before deployment — see [`transformer_life_gauge_sim.m`](./transformer_life_gauge_sim.m) |
 
 ---
 
@@ -328,9 +373,12 @@ void loop() {
 
 Recommended widgets:
 - **Gauge widget** → Live "Life Remaining %" (the headline number).
+- **Key parameters panel** → Oil temperature, winding temperature, load current, ambient temperature, and (future) oil quality — shown as a quick-glance status row.
 - **Time-series chart** → Hot-spot temperature trend over time.
 - **Time-series chart** → Load current trend over time.
+- **Life trend chart** → "Life Remaining %" plotted over weeks/months to spot accelerating aging early.
 - **Alarm rule** → Trigger notification if `F_AA` exceeds a set threshold for a sustained period (indicates abnormal aging rate).
+- **Mobile view** → ThingsBoard's mobile app/PWA view for checking status and receiving alerts from anywhere.
 
 ---
 
@@ -350,13 +398,13 @@ Example threshold logic to implement in ThingsBoard rule chains (tune these once
 
 ---
 
-## 🎯 Bonus Feature: Dynamic Loading Advisor
+## 🎯 Dynamic Loading Advisor (Step 4)
 
 Since the system tracks aging rate in real time, it can answer a second, very practical question:
 
 > *"If I overload this transformer by X% for the next few hours, how much life will it actually cost me?"*
 
-This is a known industry concept called **dynamic thermal loading**, used by utilities for emergency/contingency loading decisions (e.g., when a neighboring transformer is out of service). Implementation idea: run the Step 1–3 formulas forward in simulation for a proposed load profile, and report projected life-loss before the operator commits to the overload.
+This is a known industry concept called **dynamic thermal loading**, used by utilities for emergency/contingency loading decisions (e.g., when a neighboring transformer is out of service). It's implemented as **Step 4** of the core model (see [The Math Model](#-the-math-model)): run Steps 1–3 forward in simulation for a proposed load profile, and report projected life-loss and a safe recommendation — e.g. *"Safe to add +10% load for next 3 hours"* — before the operator commits to the overload. Already validated in the offline MATLAB simulation alongside Steps 1–3.
 
 ---
 
@@ -387,13 +435,14 @@ Be upfront about this — it strengthens the project's credibility rather than w
 
 - [x] Concept design and thermal aging model research
 - [x] Bench-top prototype BOM and wiring plan
-- [ ] Build and test bench prototype (simulated heat load)
+- [x] Offline MATLAB simulation of the 4-step thermal aging model (validated against a simulated daily load profile)
+- [x] Implement Dynamic Loading Advisor simulation (Step 4, validated in MATLAB)
+- [ ] Build and test physical bench prototype (simulated heat load)
 - [ ] Calibrate against known `R`, `Δθ_TO`, `Δθ_HS` reference values
 - [ ] Build ThingsBoard dashboard with live gauge + alerts
-- [ ] Implement Dynamic Loading Advisor simulation
 - [ ] Validate against real transformer temperature-rise test data (if available)
 - [ ] Explore ML-based refinement of aging predictions using historical trend data
-- [ ] Explore integration with Dissolved Gas Analysis (DGA) data as a complementary diagnostic
+- [ ] Explore oil quality sensing / integration with Dissolved Gas Analysis (DGA) data as a complementary diagnostic
 
 ---
 
@@ -434,5 +483,5 @@ This project is shared for educational and portfolio purposes. Feel free to fork
 
 ---
 
-**Author:** Rahul Sahu — B.Tech Electrical & Electronics Engineering
+**Author:** Rahul Sahu — B.Tech Electrical & Electronics Engineering, Aditya University
 *Built as a concept project connecting IoT experience with power transformer design fundamentals.*

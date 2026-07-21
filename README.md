@@ -1,6 +1,6 @@
 <div align="center">
 
-# ⚡ Transformer Life Gauge
+# Transformer Life Gauge
 
 ### *Turning a Transformer's Thermal Behavior Into a Live "Battery Percentage" for Its Remaining Insulation Life*
 
@@ -30,7 +30,7 @@ Built as a bridge between **electrical transformer design fundamentals** and **p
 
 </div>
 
-## 📌 Table of Contents
+## Table of Contents
 
 - [Overview](#-overview)
 - [The Problem](#-the-problem)
@@ -59,7 +59,7 @@ Built as a bridge between **electrical transformer design fundamentals** and **p
 ---
 
 
-## 🔎 Overview
+## Overview
 
 Power transformers rarely fail from "old age" directly — they fail because the **paper insulation** wrapped around the windings chemically degrades over time, and heat is the single biggest accelerant of that degradation. Today, most transformers are maintained on a **fixed schedule** (periodic manual inspection) rather than based on their **actual real-time thermal history**.
 
@@ -73,7 +73,7 @@ This is **not a new algorithm** — the underlying thermal aging math is a well-
 
 ---
 
-## ❗ The Problem
+## The Problem
 
 - Most transformers (especially distribution and mid-size industrial units, roughly 25 kVA – 100 MVA) are **not** continuously monitored for insulation health.
 - Maintenance is typically **time-based**, not **condition-based** — inspections happen on a calendar, regardless of how hard the transformer has actually been run.
@@ -82,7 +82,7 @@ This is **not a new algorithm** — the underlying thermal aging math is a well-
 
 ---
 
-## 📊 Industry Failure Data
+## Industry Failure Data
 
 Real data justifying why this problem is worth solving — not assumptions:
 
@@ -100,7 +100,7 @@ Real data justifying why this problem is worth solving — not assumptions:
 
 ---
 
-## 🏭 Transformer Types: Where This Project Fits
+## Transformer Types: Where This Project Fits
 
 
 Not all transformers are the same — the term covers a wide range of equipment, and it matters which category this project targets.
@@ -119,7 +119,7 @@ Not all transformers are the same — the term covers a wide range of equipment,
 
 ---
 
-## 🔬 Why This Works — The Physics
+## Why This Works — The Physics
 
 Two temperatures matter, and they are different:
 
@@ -135,7 +135,7 @@ This is why continuously tracking (or estimating) hot-spot temperature — inste
 
 ---
 
-## 🌡 Temperature & Loading Reference Data
+## Temperature & Loading Reference Data
 
 ### What "ambient temperature" means
 Ambient temperature is simply the temperature of the **air surrounding the transformer** — not the oil, not the winding. It's the starting point that heat gets added onto, in a rising chain:
@@ -180,7 +180,7 @@ In practice, most transformers run well below 100% load most of the time (see be
 
 ---
 
-## 🧮 The Math Model
+## The Math Model
 
 All formulas below follow **IEEE Std C57.91 (Guide for Loading Mineral-Oil-Immersed Transformers)**.
 
@@ -199,7 +199,7 @@ All formulas below follow **IEEE Std C57.91 (Guide for Loading Mineral-Oil-Immer
 | `Δθ_HS` | Rated hot-spot-to-top-oil gradient | Transformer design/test data |
 | `n, m` | Empirical exponents (depend on cooling type: ONAN/ONAF/OFAF) | IEEE C57.91 tables |
 
-> 💡 **Note:** `R`, `Δθ_TO`, and `Δθ_HS` come directly from a transformer's temperature-rise design/test report — exactly the kind of data an electrical design engineer calculates during the design stage. For a prototype, use representative textbook/datasheet values or your own bench-test measurements.
+> **Note:** `R`, `Δθ_TO`, and `Δθ_HS` come directly from a transformer's temperature-rise design/test report — exactly the kind of data an electrical design engineer calculates during the design stage. For a prototype, use representative textbook/datasheet values or your own bench-test measurements.
 
 ### Step 2 — Convert hot-spot temperature into an aging acceleration factor
 
@@ -233,7 +233,7 @@ For a proposed load K_proposed sustained over duration Δt_proposed:
 
 Example output shown on the dashboard: *"Safe to add +10% load for the next 3 hours"* — with the projected life cost calculated and displayed **before** the operator commits to the overload. See [Dynamic Loading Advisor (Step 4)](#-dynamic-loading-advisor-step-4) for the utility context behind this.
 
-> ✅ **Offline validation completed:** this full 4-step model has already been implemented and validated in MATLAB using a simulated 24-hour daily load profile (load %, hot-spot temperature, aging acceleration factor `F_AA`, and live "Life Remaining %" trend) — confirming the math behaves correctly before any deployment on IoT hardware. See [`transformer_life_gauge_sim.m`](./transformer_life_gauge_sim.m).
+> **Offline validation completed:** this full 4-step model has already been implemented and validated in MATLAB using a simulated 24-hour daily load profile (load %, hot-spot temperature, aging acceleration factor `F_AA`, and live "Life Remaining %" trend) — confirming the math behaves correctly before any deployment on IoT hardware. See [`transformer_life_gauge_sim.m`](./transformer_life_gauge_sim.m).
 
 ---
 
@@ -257,7 +257,7 @@ Example output shown on the dashboard: *"Safe to add +10% load for the next 3 ho
 
 ---
 
-## 📈 Parameters Monitored
+## Parameters Monitored
 
 | Parameter | Sensor (Prototype) | Role in the Model |
 |---|---|---|
@@ -272,11 +272,11 @@ Example output shown on the dashboard: *"Safe to add +10% load for the next 3 ho
 
 > On a real transformer, oil temperature and load current would come from industrial-grade RTD probes and CT clamps instead of the prototype sensors above — the model and calculations stay identical.
 
-> ⚠️ **Honest note on Oil Quality:** the dashboard mockup displays an "Oil Quality: Good" field for a complete operator view, but real oil quality assessment (dielectric strength, moisture content, Dissolved Gas Analysis) requires lab testing or specialized industrial sensors — it is **not** computed by the current bench prototype. It's shown as a placeholder/future integration point, not a working measurement yet (see [Roadmap](#-roadmap)).
+> **Honest note on Oil Quality:** the dashboard mockup displays an "Oil Quality: Good" field for a complete operator view, but real oil quality assessment (dielectric strength, moisture content, Dissolved Gas Analysis) requires lab testing or specialized industrial sensors — it is **not** computed by the current bench prototype. It's shown as a placeholder/future integration point, not a working measurement yet (see [Roadmap](#-roadmap)).
 
 ---
 
-## 🧰 Bill of Materials (Prototype)
+## Bill of Materials (Prototype)
 
 For a **bench-top demo** (simulating transformer heat with a small load, not an actual power transformer):
 
@@ -295,13 +295,13 @@ For a **bench-top demo** (simulating transformer heat with a small load, not an 
 
 **Software/cloud cost:** ₹0 (ThingsBoard Community Edition, public/self-hosted MQTT broker, Arduino IDE/STM32CubeIDE — all free).
 
-> 🔧 **ESP32 vs STM32:** ESP32 is the simpler prototype choice — built-in WiFi means no extra communication module. STM32 offers more processing headroom and peripheral options but needs a separate WiFi/Ethernet module (e.g., ESP8266 as a co-processor, or an Ethernet shield) to reach the MQTT broker. For a fast bench demo, ESP32 is recommended; STM32 is a reasonable alternative if you already have one on hand or want more control-oriented peripherals.
+> **ESP32 vs STM32:** ESP32 is the simpler prototype choice — built-in WiFi means no extra communication module. STM32 offers more processing headroom and peripheral options but needs a separate WiFi/Ethernet module (e.g., ESP8266 as a co-processor, or an Ethernet shield) to reach the MQTT broker. For a fast bench demo, ESP32 is recommended; STM32 is a reasonable alternative if you already have one on hand or want more control-oriented peripherals.
 
-> 🔧 **Scaling to a real transformer:** swap DS18B20/ACS712 for industrial-grade oil-immersion RTD probes and a proper CT clamp, and replace placeholder `R`, `Δθ_TO`, `Δθ_HS` values with that transformer's actual temperature-rise test data.
+> **Scaling to a real transformer:** swap DS18B20/ACS712 for industrial-grade oil-immersion RTD probes and a proper CT clamp, and replace placeholder `R`, `Δθ_TO`, `Δθ_HS` values with that transformer's actual temperature-rise test data.
 
 ---
 
-## 🔌 Wiring Diagram
+## Wiring Diagram
 
 ```
 ESP32                DS18B20 (Temp)
@@ -321,11 +321,11 @@ ESP32                DHT22 (Ambient, optional)
   GPIO27 ────────────── DATA
 ```
 
-> ⚠️ ACS712 runs on 5V logic; ESP32 ADC pins are 3.3V-tolerant only. Use a voltage divider or level shifter on the OUT pin, or read via an external 3.3V-compatible ADC (e.g., ADS1115) for more accurate readings.
+> ACS712 runs on 5V logic; ESP32 ADC pins are 3.3V-tolerant only. Use a voltage divider or level shifter on the OUT pin, or read via an external 3.3V-compatible ADC (e.g., ADS1115) for more accurate readings.
 
 ---
 
-## 💻 Software Stack
+## Software Stack
 
 | Layer | Tool | Notes |
 |---|---|---|
@@ -338,7 +338,7 @@ ESP32                DHT22 (Ambient, optional)
 
 ---
 
-## 🧑‍💻 Firmware Logic (Pseudocode)
+## Firmware Logic (Pseudocode)
 
 ```cpp
 // Simplified logic — not full production code
@@ -369,7 +369,7 @@ void loop() {
 
 ---
 
-## 📊 Dashboard (ThingsBoard)
+## Dashboard (ThingsBoard)
 
 Recommended widgets:
 - **Gauge widget** → Live "Life Remaining %" (the headline number).
@@ -382,7 +382,7 @@ Recommended widgets:
 
 ---
 
-## 🚨 Alarm Conditions
+## Alarm Conditions
 
 Example threshold logic to implement in ThingsBoard rule chains (tune these once real transformer reference data is available):
 
@@ -398,7 +398,7 @@ Example threshold logic to implement in ThingsBoard rule chains (tune these once
 
 ---
 
-## 🎯 Dynamic Loading Advisor (Step 4)
+## Dynamic Loading Advisor (Step 4)
 
 Since the system tracks aging rate in real time, it can answer a second, very practical question:
 
@@ -408,7 +408,7 @@ This is a known industry concept called **dynamic thermal loading**, used by uti
 
 ---
 
-## 🌍 Applications
+## Applications
 
 - **Distribution transformers** (residential/commercial feeders) — currently the least-monitored tier; biggest potential impact due to sheer numbers.
 - **Industrial plant transformers** — factories running variable, sometimes heavy loads that don't match "textbook" rated conditions.
@@ -419,7 +419,7 @@ This is a known industry concept called **dynamic thermal loading**, used by uti
 
 ---
 
-## 🔍 What Already Exists (Prior Art)
+## What Already Exists (Prior Art)
 
 Be upfront about this — it strengthens the project's credibility rather than weakening it:
 
@@ -431,7 +431,7 @@ Be upfront about this — it strengthens the project's credibility rather than w
 
 ---
 
-## 🗺 Roadmap
+## Roadmap
 
 - [x] Concept design and thermal aging model research
 - [x] Bench-top prototype BOM and wiring plan
@@ -446,7 +446,7 @@ Be upfront about this — it strengthens the project's credibility rather than w
 
 ---
 
-## ⚠️ Limitations & Honest Caveats
+## Limitations & Honest Caveats
 
 - This is a **thermal model estimate**, not a direct physical measurement — it should support engineering judgment and complement (not replace) established diagnostics like Dissolved Gas Analysis (DGA).
 - Accuracy depends heavily on having correct `R`, `Δθ_TO`, and `Δθ_HS` values for the specific transformer — these should come from actual design/test data, not generic assumptions.
@@ -455,7 +455,7 @@ Be upfront about this — it strengthens the project's credibility rather than w
 
 ---
 
-## 🎓 Learning Outcomes
+## Learning Outcomes
 
 Building this project is expected to strengthen understanding of:
 
@@ -469,7 +469,7 @@ Building this project is expected to strengthen understanding of:
 
 ---
 
-## 📚 References
+## References
 
 - IEEE Std C57.91 — *IEEE Guide for Loading Mineral-Oil-Immersed Transformers and Step-Voltage Regulators*
 - IEC 60076-7 — *Loading guide for oil-immersed power transformers*
@@ -477,11 +477,8 @@ Building this project is expected to strengthen understanding of:
 
 ---
 
-## 📄 License
+## License
 
 This project is shared for educational and portfolio purposes. Feel free to fork, adapt, and build on it — attribution appreciated.
 
 ---
-
-**Author:** Rahul Sahu — B.Tech Electrical & Electronics Engineering, Aditya University
-*Built as a concept project connecting IoT experience with power transformer design fundamentals.*

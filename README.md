@@ -237,7 +237,7 @@ Example output shown on the dashboard: *"Safe to add +10% load for the next 3 ho
 
 ---
 
-## 🏗 System Architecture
+## System Architecture
 
 ```
 ┌────────────────────────┐   ┌────────────────┐     ┌────────┐     ┌────────────────────┐

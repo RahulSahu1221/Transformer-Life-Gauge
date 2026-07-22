@@ -76,17 +76,24 @@ function transformer_life_gauge_dashboard()
 
     %% ---- Panel C: Live Parameters & Alarms ----
     pStatus = panelDarkStyle(fig,'LIVE PARAMETERS & ALARMS',[colX(3) topY colW topH]);
-    rowLbl(pStatus, textLight, textMuted, fieldDark, fontName, 205, 'Ambient Temperature');
-    lblAmbient = valLbl(pStatus, textLight, fieldDark, fontName, 205);
-    rowLbl(pStatus, textLight, textMuted, fieldDark, fontName, 178, 'Load Current');
-    lblLoad = valLbl(pStatus, textLight, fieldDark, fontName, 178);
-    rowLbl(pStatus, textLight, textMuted, fieldDark, fontName, 151, 'Aging Factor (F_{AA})');
-    lblFAA = valLbl(pStatus, textLight, fieldDark, fontName, 151);
-    rowLbl(pStatus, textLight, textMuted, fieldDark, fontName, 124, 'Simulated Time');
-    lblSim = valLbl(pStatus, textLight, fieldDark, fontName, 124);
-
-    [lampHS, lblHSAlarm]     = lampRow(pStatus, panelDark, textLight, fontName, green, 90, 'Hot-Spot: OK');
-    [lampFAA, lblFAAAlarm]   = lampRow(pStatus, panelDark, textLight, fontName, green, 55,  'Aging Rate: OK');
+    
+    rowLbl(pStatus, textLight, textMuted, fieldDark, fontName, 215, 'Oil Temperature');
+    lblOil = valLbl(pStatus, textLight, fieldDark, fontName, 215);
+    
+    rowLbl(pStatus, textLight, textMuted, fieldDark, fontName, 190, 'Aging Factor (F_{AA})');
+    lblFAA = valLbl(pStatus, textLight, fieldDark, fontName, 190);
+    
+    rowLbl(pStatus, textLight, textMuted, fieldDark, fontName, 165, 'Load (% Rated)');
+    lblLoad = valLbl(pStatus, textLight, fieldDark, fontName, 165);
+    
+    rowLbl(pStatus, textLight, textMuted, fieldDark, fontName, 140, 'Ambient Temperature');
+    lblAmbient = valLbl(pStatus, textLight, fieldDark, fontName, 140);
+    
+    rowLbl(pStatus, textLight, textMuted, fieldDark, fontName, 115, 'Operating Hours');
+    lblSim = valLbl(pStatus, textLight, fieldDark, fontName, 115);
+    
+    [lampHS, lblHSAlarm]     = lampRow(pStatus, panelDark, textLight, fontName, green, 80, 'Hot-Spot: OK');
+    [lampFAA, lblFAAAlarm]   = lampRow(pStatus, panelDark, textLight, fontName, green, 50,  'Aging Rate: OK');
     [lampLife, lblLifeAlarm] = lampRow(pStatus, panelDark, textLight, fontName, green, 20,  'Life Level: OK');
 
     %% ---- Panel D: Manual Controls & Scenarios ----
@@ -279,7 +286,7 @@ function transformer_life_gauge_dashboard()
 
         updateSliderLabels();
 
-        [thetaH, F_AA] = stepModel(ambientTemp, K, C);
+        [thetaH, F_AA, thetaTO] = stepModel(ambientTemp, K, C);
         S.totalAgedHours = S.totalAgedHours + F_AA*dtSimHours;
         S.simHours = S.simHours + dtSimHours;
         lifeUsed = (S.totalAgedHours / C.ratedLifeHours) * 100;
@@ -308,15 +315,16 @@ function transformer_life_gauge_dashboard()
     S.smoothLife = S.smoothLife + inertia * (lifeRemaining - S.smoothLife);
     S.smoothHS   = S.smoothHS + inertia * (thetaH - S.smoothHS);
 
-    % ---- Update Gauges with Smoothed Values ----
+    % ---- Update Gauges with Smoothed Values ----  
     updateGauge(gLife, S.smoothLife, lifeColor, lifeStatus, '%.3f');
     updateGauge(gHS, S.smoothHS, hsColor, hsStatus, '%.1f');
 
-        % ---- Labels ----
-        set(lblAmbient,'String',sprintf('%.1f C',ambientTemp));
-        set(lblLoad,'String',sprintf('%.0f %%',K*100));
-        set(lblFAA,'String',sprintf('%.2f x',F_AA));
-        set(lblSim,'String',sprintf('%.1f hrs',S.simHours));
+    % ---- Labels ----
+    set(lblOil,'String',sprintf('%.1f C',thetaTO));
+    set(lblFAA,'String',sprintf('%.3f x',F_AA));
+    set(lblLoad,'String',sprintf('%.0f %%',K*100));
+    set(lblAmbient,'String',sprintf('%.1f C',ambientTemp));
+    set(lblSim,'String',sprintf('%.1f hrs',S.simHours));
 
         % ---- Alarm lamps ----
         if thetaH > C.critHS
@@ -362,10 +370,11 @@ function transformer_life_gauge_dashboard()
 end
 
 %% ================= HELPER: MODEL ==================
-function [thetaH, F_AA] = stepModel(ambientTemp, K, C)
+function [thetaH, F_AA, thetaTO] = stepModel(ambientTemp, K, C)
     oilRise = C.dTheta_TO * ((1 + K^2*C.R)/(1+C.R))^C.n_exp;
     hsRise  = C.dTheta_HS * K^(2*C.m_exp);
-    thetaH  = ambientTemp + oilRise + hsRise;
+    thetaTO = ambientTemp + oilRise;
+    thetaH  = thetaTO + hsRise;
     F_AA    = exp((15000/383) - (15000/(thetaH+273)));
 end
 

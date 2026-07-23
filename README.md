@@ -85,7 +85,7 @@ This is **not a new algorithm** — the underlying thermal aging math is a well-
 | [`Thermal_Aging_Model_Simulation.m`](./Thermal_Aging_Model_Simulation.m) | Offline MATLAB script: simulates a 24-hour load/ambient profile through the full thermal aging model and plots the results |
 | [`Offline Simulation of 24 hrs.png`](./Offline%20Simulation%20of%2024%20hrs.png) | Output plots from the offline 24-hour simulation above |
 | [`transformer_life_gauge_dashboard.m`](./transformer_life_gauge_dashboard.m) | Interactive MATLAB dashboard: live speedometer gauges, alarms, manual controls, auto-run scenarios, and the Dynamic Loading Advisor — a full software simulation of the finished system |
-| [`Tranformer LIfe Guage Dashboard.png`](./Tranformer%20LIfe%20Guage%20Dashboard.png) | Screenshot of the live interactive dashboard in action |
+| [`Dashboard.png`](./Tranformer%20LIfe%20Guage%20Dashboard.png) | Screenshot of the live interactive dashboard in action |
 | [`Transformer Life Guage Presentation.pdf`](./Transformer%20Life%20Guage%20Presentation.pdf) | Interview/presentation slide deck for this project |
 | [`LICENSE`](./LICENSE) | MIT License |
 | `.gitignore` | Standard repository housekeeping |
@@ -113,7 +113,7 @@ A full, live-running software simulation of the finished product — built entir
 - **A working Dynamic Loading Advisor panel** (Step 4) — propose an overload % and duration, and it calculates the projected life cost live.
 - **The Industry Failure Data (CIGRE) chart** and a live scrolling trend plot of Life Remaining % over simulated time.
 
-![Uploading Dashboard.png…]()
+<img width="2436" height="1794" alt="Dashboard" src="https://github.com/user-attachments/assets/a18dabd0-cf0e-433d-9f49-863bb636628f" />
 
 > Both scripts implement and confirm the same underlying math — the offline script proves the model over a realistic day, the dashboard proves it works as a live, interactive system an operator could actually use. Neither one requires any physical hardware.
 

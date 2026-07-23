@@ -480,7 +480,7 @@ Be upfront about this — it strengthens the project's credibility rather than w
 
 ---
 
-## 🗺 Roadmap
+## Roadmap
 
 **Completed:**
 - [x] Concept design and thermal aging model research

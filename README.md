@@ -113,7 +113,7 @@ A full, live-running software simulation of the finished product — built entir
 - **A working Dynamic Loading Advisor panel** (Step 4) — propose an overload % and duration, and it calculates the projected life cost live.
 - **The Industry Failure Data (CIGRE) chart** and a live scrolling trend plot of Life Remaining % over simulated time.
 
-![Live interactive dashboard screenshot](./Tranformer%20LIfe%20Guage%20Dashboard.png)
+![Uploading Dashboard.png…]()
 
 > Both scripts implement and confirm the same underlying math — the offline script proves the model over a realistic day, the dashboard proves it works as a live, interactive system an operator could actually use. Neither one requires any physical hardware.
 

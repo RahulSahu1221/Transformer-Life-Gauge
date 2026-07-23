@@ -10,14 +10,14 @@ Built as a bridge between **electrical transformer design fundamentals** and **p
 
 <br>
 
-![Status](https://img.shields.io/badge/Status-Concept%20%2F%20Design%20Stage-orange)
+![Status](https://img.shields.io/badge/Status-Simulation%20Complete%20%7C%20Hardware%20Pending-orange)
 ![Model](https://img.shields.io/badge/Model-IEEE%20C57.91-1c3d5a)
+![Simulation](https://img.shields.io/badge/Simulation-MATLAB%20Dashboard%20%2B%20Offline%20Model-9b59b6)
 ![Hardware](https://img.shields.io/badge/Hardware-ESP32%20%2F%20STM32-e74c3c)
 ![Protocol](https://img.shields.io/badge/Protocol-MQTT-660066)
 ![Dashboard](https://img.shields.io/badge/Dashboard-ThingsBoard-2e86de)
 ![Domain](https://img.shields.io/badge/Domain-Power%20Transformers-2c3e50)
 ![Type](https://img.shields.io/badge/Type-IoT%20%2B%20Electrical%20Engineering-16a085)
-![Validated](https://img.shields.io/badge/Model-MATLAB%20Validated-9b59b6)
 ![License](https://img.shields.io/badge/License-MIT-brightgreen)
 
 <br>
@@ -33,6 +33,8 @@ Built as a bridge between **electrical transformer design fundamentals** and **p
 ## Table of Contents
 
 - [Overview](#-overview)
+- [Repository Contents](#-repository-contents)
+- [Simulation & Validation (Completed)](#-simulation--validation-completed)
 - [The Problem](#-the-problem)
 - [Industry Failure Data](#-industry-failure-data)
 - [Transformer Types: Where This Project Fits](#-transformer-types-where-this-project-fits)
@@ -70,6 +72,50 @@ Power transformers rarely fail from "old age" directly — they fail because the
 4. (Bonus) Advises how much safe overload capacity is available at any given moment.
 
 This is **not a new algorithm** — the underlying thermal aging math is a well-established IEEE standard already used in expensive fiber-optic monitoring systems on large, critical, high-voltage transformers. The goal of this project is to make the **same proven model** accessible on **mid-size and smaller transformers** using cheap, off-the-shelf IoT hardware (ESP32 + MQTT + cloud dashboard) instead of specialized fiber-optic sensor systems.
+
+**Where this stands right now:** the complete thermal aging model has been built and validated twice over in MATLAB — once as an offline batch simulation, once as a full interactive live dashboard (see [Simulation & Validation](#-simulation--validation-completed) below). The **physical hardware prototype** — real sensors feeding a microcontroller, publishing to ThingsBoard over MQTT — is the next stage and has not been built yet (see [Roadmap](#-roadmap)).
+
+---
+
+## Repository Contents
+
+| File | Description |
+|---|---|
+| [`README.md`](./README.md) | This document — full project write-up |
+| [`Thermal_Aging_Model_Simulation.m`](./Thermal_Aging_Model_Simulation.m) | Offline MATLAB script: simulates a 24-hour load/ambient profile through the full thermal aging model and plots the results |
+| [`Offline Simulation of 24 hrs.png`](./Offline%20Simulation%20of%2024%20hrs.png) | Output plots from the offline 24-hour simulation above |
+| [`transformer_life_gauge_dashboard.m`](./transformer_life_gauge_dashboard.m) | Interactive MATLAB dashboard: live speedometer gauges, alarms, manual controls, auto-run scenarios, and the Dynamic Loading Advisor — a full software simulation of the finished system |
+| [`Tranformer LIfe Guage Dashboard.png`](./Tranformer%20LIfe%20Guage%20Dashboard.png) | Screenshot of the live interactive dashboard in action |
+| [`Transformer Life Guage Presentation.pdf`](./Transformer%20Life%20Guage%20Presentation.pdf) | Interview/presentation slide deck for this project |
+| [`LICENSE`](./LICENSE) | MIT License |
+| `.gitignore` | Standard repository housekeeping |
+
+---
+
+## Simulation & Validation (Completed)
+
+Before any physical hardware is built, the full 4-step thermal aging model (see [The Math Model](#-the-math-model)) has already been implemented and validated twice, entirely in MATLAB — this is the part of the project that's actually finished today.
+
+### 1. Offline Batch Simulation — [`Thermal_Aging_Model_Simulation.m`](./Thermal_Aging_Model_Simulation.m)
+
+Runs a simulated 24-hour day (a realistic load profile — low at night, peaking in the afternoon — plus a daily ambient temperature swing) through Steps 1–3 of the model, then plots load %, hot-spot temperature, aging acceleration factor (`F_AA`), and the resulting "Life Remaining %" trend. Also runs a Dynamic Loading Advisor (Step 4) "what-if" scenario (130% load for 4 hours) and prints the projected life cost.
+
+![Offline 24-hour simulation results](./Offline%20Simulation%20of%2024%20hrs.png)
+
+### 2. Interactive Live Dashboard — [`transformer_life_gauge_dashboard.m`](./transformer_life_gauge_dashboard.m)
+
+A full, live-running software simulation of the finished product — built entirely with plain MATLAB graphics (no toolboxes required), so it runs on any standard MATLAB install:
+
+- **Real speedometer-style gauges** for Life Remaining % and Winding Hot-Spot Temperature (0–240°C), with color zones that match the actual alarm thresholds (green up to rated+15°C, yellow to rated+25°C, red beyond).
+- **Live parameter readouts** — oil temperature, aging factor `F_AA`, load %, ambient temperature, and cumulative operating hours.
+- **Three alarm lamps** wired to the exact thresholds in [Alarm Conditions](#-alarm-conditions), including sustained-duration logic (not just instantaneous thresholds).
+- **Manual sliders** (ambient temperature, load %, simulation speed) with live value + range readouts, plus two auto-run scenarios: *Typical Daily Profile* and *Emergency Overload Event*.
+- **A working Dynamic Loading Advisor panel** (Step 4) — propose an overload % and duration, and it calculates the projected life cost live.
+- **The Industry Failure Data (CIGRE) chart** and a live scrolling trend plot of Life Remaining % over simulated time.
+
+![Live interactive dashboard screenshot](./Tranformer%20LIfe%20Guage%20Dashboard.png)
+
+> Both scripts implement and confirm the same underlying math — the offline script proves the model over a realistic day, the dashboard proves it works as a live, interactive system an operator could actually use. Neither one requires any physical hardware.
 
 ---
 
@@ -233,7 +279,7 @@ For a proposed load K_proposed sustained over duration Δt_proposed:
 
 Example output shown on the dashboard: *"Safe to add +10% load for the next 3 hours"* — with the projected life cost calculated and displayed **before** the operator commits to the overload. See [Dynamic Loading Advisor (Step 4)](#-dynamic-loading-advisor-step-4) for the utility context behind this.
 
-> **Offline validation completed:** this full 4-step model has already been implemented and validated in MATLAB using a simulated 24-hour daily load profile (load %, hot-spot temperature, aging acceleration factor `F_AA`, and live "Life Remaining %" trend) — confirming the math behaves correctly before any deployment on IoT hardware. See [`transformer_life_gauge_sim.m`](./transformer_life_gauge_sim.m).
+> **Offline validation completed:** this full 4-step model has already been implemented and validated in MATLAB using a simulated 24-hour daily load profile (load %, hot-spot temperature, aging acceleration factor `F_AA`, and live "Life Remaining %" trend) — confirming the math behaves correctly before any deployment on IoT hardware. See [`Thermal_Aging_Model_Simulation.m`](./Thermal_Aging_Model_Simulation.m), and the fully interactive version in [`transformer_life_gauge_dashboard.m`](./transformer_life_gauge_dashboard.m) (see [Simulation & Validation](#-simulation--validation-completed)).
 
 ---
 
@@ -297,7 +343,7 @@ For a **bench-top demo** (simulating transformer heat with a small load, not an 
 
 > **ESP32 vs STM32:** ESP32 is the simpler prototype choice — built-in WiFi means no extra communication module. STM32 offers more processing headroom and peripheral options but needs a separate WiFi/Ethernet module (e.g., ESP8266 as a co-processor, or an Ethernet shield) to reach the MQTT broker. For a fast bench demo, ESP32 is recommended; STM32 is a reasonable alternative if you already have one on hand or want more control-oriented peripherals.
 
-> **Scaling to a real transformer:** swap DS18B20/ACS712 for industrial-grade oil-immersion RTD probes and a proper CT clamp, and replace placeholder `R`, `Δθ_TO`, `Δθ_HS` values with that transformer's actual temperature-rise test data.
+> 🔧 **Scaling to a real transformer:** swap DS18B20/ACS712 for industrial-grade oil-immersion RTD probes and a proper CT clamp, and replace placeholder `R`, `Δθ_TO`, `Δθ_HS` values with that transformer's actual temperature-rise test data.
 
 ---
 
@@ -334,7 +380,8 @@ ESP32                DHT22 (Ambient, optional)
 | Cloud Dashboard | [ThingsBoard](https://thingsboard.io/) Community Edition | Free, self-hostable or use ThingsBoard Cloud sandbox |
 | Data Storage | ThingsBoard time-series DB | Built-in, no separate DB setup needed for prototype |
 | Optional Alerts | ThingsBoard Rule Chains | Trigger notification if life-consumption rate spikes |
-| Offline Model Validation | MATLAB R2024a | Validates the 4-step math model against a simulated daily load profile before deployment — see [`transformer_life_gauge_sim.m`](./transformer_life_gauge_sim.m) |
+| Offline Model Validation | MATLAB R2024a | Validates the 4-step math model against a simulated daily load profile before deployment — see [`Thermal_Aging_Model_Simulation.m`](./Thermal_Aging_Model_Simulation.m) |
+| Interactive Dashboard Simulation | MATLAB R2024a | Full live speedometer-gauge dashboard simulating the finished system end-to-end — see [`transformer_life_gauge_dashboard.m`](./transformer_life_gauge_dashboard.m) |
 
 ---
 
@@ -370,6 +417,8 @@ void loop() {
 ---
 
 ## Dashboard (ThingsBoard)
+
+> Note: this section describes the **planned cloud dashboard** for the physical hardware stage — not yet built. The interactive MATLAB dashboard that already exists and simulates this same behavior locally is covered in [Simulation & Validation](#-simulation--validation-completed).
 
 Recommended widgets:
 - **Gauge widget** → Live "Life Remaining %" (the headline number).
@@ -431,15 +480,21 @@ Be upfront about this — it strengthens the project's credibility rather than w
 
 ---
 
-## Roadmap
+## 🗺 Roadmap
 
+**Completed:**
 - [x] Concept design and thermal aging model research
 - [x] Bench-top prototype BOM and wiring plan
-- [x] Offline MATLAB simulation of the 4-step thermal aging model (validated against a simulated daily load profile)
-- [x] Implement Dynamic Loading Advisor simulation (Step 4, validated in MATLAB)
-- [ ] Build and test physical bench prototype (simulated heat load)
+- [x] Offline MATLAB simulation of the 4-step thermal aging model over a simulated 24-hour day ([`Thermal_Aging_Model_Simulation.m`](./Thermal_Aging_Model_Simulation.m))
+- [x] Full interactive live dashboard simulation with speedometer gauges, alarms, scenarios, and the Dynamic Loading Advisor ([`transformer_life_gauge_dashboard.m`](./transformer_life_gauge_dashboard.m))
+- [x] Implement and validate Dynamic Loading Advisor (Step 4) logic
+
+**Remaining — the physical hardware prototype:**
+- [ ] Collect real-time data from actual sensors (temperature, load current, ambient) rather than simulated/slider-driven values
+- [ ] Process that sensor data on a physical microcontroller (ESP32/STM32), running the same 4-step model
+- [ ] Publish live data to ThingsBoard (cloud) over MQTT
+- [ ] Build the ThingsBoard dashboard with live gauge + alerts (cloud version of the MATLAB dashboard)
 - [ ] Calibrate against known `R`, `Δθ_TO`, `Δθ_HS` reference values
-- [ ] Build ThingsBoard dashboard with live gauge + alerts
 - [ ] Validate against real transformer temperature-rise test data (if available)
 - [ ] Explore ML-based refinement of aging predictions using historical trend data
 - [ ] Explore oil quality sensing / integration with Dissolved Gas Analysis (DGA) data as a complementary diagnostic
@@ -479,6 +534,7 @@ Building this project is expected to strengthen understanding of:
 
 ## License
 
-This project is shared for educational and portfolio purposes. Feel free to fork, adapt, and build on it — attribution appreciated.
+This project is shared for educational and portfolio purposes under the MIT License. Feel free to fork, adapt, and build on it — attribution appreciated. See [`LICENSE`](./LICENSE) for full terms.
 
 ---
+
